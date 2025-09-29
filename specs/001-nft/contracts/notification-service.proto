@@ -1,0 +1,228 @@
+syntax = "proto3";
+
+package notification;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/nft-platform/proto/notification";
+
+// Notification service for managing user notifications and real-time messaging
+service NotificationService {
+  // Notification management methods
+  rpc CreateNotification(CreateNotificationRequest) returns (CreateNotificationResponse);
+  rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
+  rpc MarkAllAsRead(MarkAllAsReadRequest) returns (MarkAllAsReadResponse);
+  rpc DeleteNotification(DeleteNotificationRequest) returns (DeleteNotificationResponse);
+  
+  // Bulk notification methods
+  rpc CreateBulkNotifications(CreateBulkNotificationsRequest) returns (CreateBulkNotificationsResponse);
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (GetUnreadCountResponse);
+  
+  // Real-time notification methods
+  rpc Subscribe(SubscribeRequest) returns (stream NotificationEvent);
+  rpc SendRealtimeNotification(SendRealtimeNotificationRequest) returns (SendRealtimeNotificationResponse);
+  
+  // Template-based notifications
+  rpc SendBidNotification(SendBidNotificationRequest) returns (SendBidNotificationResponse);
+  rpc SendAuctionNotification(SendAuctionNotificationRequest) returns (SendAuctionNotificationResponse);
+  rpc SendNFTNotification(SendNFTNotificationRequest) returns (SendNFTNotificationResponse);
+}
+
+// Messages for notification creation
+message CreateNotificationRequest {
+  uint32 user_id = 1;
+  NotificationType type = 2;
+  string title = 3;
+  string message = 4;
+  google.protobuf.Struct data = 5;
+}
+
+message CreateNotificationResponse {
+  Notification notification = 1;
+}
+
+message CreateBulkNotificationsRequest {
+  repeated CreateNotificationRequest notifications = 1;
+}
+
+message CreateBulkNotificationsResponse {
+  repeated Notification notifications = 1;
+  int32 created_count = 2;
+}
+
+// Messages for notification queries
+message GetNotificationsRequest {
+  uint32 user_id = 1;
+  bool unread_only = 2;
+  NotificationType type = 3;
+  int32 page = 4;
+  int32 limit = 5;
+}
+
+message GetNotificationsResponse {
+  repeated Notification notifications = 1;
+  Pagination pagination = 2;
+}
+
+message GetUnreadCountRequest {
+  uint32 user_id = 1;
+}
+
+message GetUnreadCountResponse {
+  int32 count = 1;
+}
+
+// Messages for notification management
+message MarkAsReadRequest {
+  uint32 notification_id = 1;
+  uint32 user_id = 2;
+}
+
+message MarkAsReadResponse {
+  bool success = 1;
+}
+
+message MarkAllAsReadRequest {
+  uint32 user_id = 1;
+}
+
+message MarkAllAsReadResponse {
+  int32 updated_count = 1;
+}
+
+message DeleteNotificationRequest {
+  uint32 notification_id = 1;
+  uint32 user_id = 2;
+}
+
+message DeleteNotificationResponse {
+  bool success = 1;
+}
+
+// Messages for real-time notifications
+message SubscribeRequest {
+  uint32 user_id = 1;
+}
+
+message NotificationEvent {
+  EventType event_type = 1;
+  Notification notification = 2;
+  google.protobuf.Struct data = 3;
+}
+
+message SendRealtimeNotificationRequest {
+  uint32 user_id = 1;
+  EventType event_type = 2;
+  google.protobuf.Struct data = 3;
+}
+
+message SendRealtimeNotificationResponse {
+  bool success = 1;
+}
+
+// Messages for template-based notifications
+message SendBidNotificationRequest {
+  uint32 auction_id = 1;
+  uint32 bidder_id = 2;
+  uint32 seller_id = 3;
+  uint32 previous_bidder_id = 4;
+  string bid_amount = 5;
+  string nft_title = 6;
+}
+
+message SendBidNotificationResponse {
+  repeated Notification notifications = 1;
+}
+
+message SendAuctionNotificationRequest {
+  uint32 auction_id = 1;
+  uint32 seller_id = 2;
+  repeated uint32 bidder_ids = 3;
+  uint32 winner_id = 4;
+  string winning_amount = 5;
+  string nft_title = 6;
+  AuctionEventType auction_event = 7;
+}
+
+message SendAuctionNotificationResponse {
+  repeated Notification notifications = 1;
+}
+
+message SendNFTNotificationRequest {
+  uint32 nft_id = 1;
+  uint32 from_user_id = 2;
+  uint32 to_user_id = 3;
+  string nft_title = 4;
+  string price = 5;
+  NFTEventType nft_event = 6;
+}
+
+message SendNFTNotificationResponse {
+  repeated Notification notifications = 1;
+}
+
+// Notification entity
+message Notification {
+  uint32 id = 1;
+  uint32 user_id = 2;
+  NotificationType type = 3;
+  string title = 4;
+  string message = 5;
+  google.protobuf.Struct data = 6;
+  bool is_read = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// Notification type enum
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_BID_PLACED = 1;
+  NOTIFICATION_TYPE_BID_OUTBID = 2;
+  NOTIFICATION_TYPE_AUCTION_WON = 3;
+  NOTIFICATION_TYPE_AUCTION_ENDED = 4;
+  NOTIFICATION_TYPE_NFT_SOLD = 5;
+  NOTIFICATION_TYPE_NFT_TRANSFERRED = 6;
+  NOTIFICATION_TYPE_AUCTION_STARTED = 7;
+  NOTIFICATION_TYPE_SYSTEM = 8;
+}
+
+// Event type enum for real-time notifications
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_NOTIFICATION = 1;
+  EVENT_TYPE_BID_UPDATE = 2;
+  EVENT_TYPE_AUCTION_UPDATE = 3;
+  EVENT_TYPE_NFT_UPDATE = 4;
+  EVENT_TYPE_USER_UPDATE = 5;
+}
+
+// Auction event type enum
+enum AuctionEventType {
+  AUCTION_EVENT_TYPE_UNSPECIFIED = 0;
+  AUCTION_EVENT_TYPE_STARTED = 1;
+  AUCTION_EVENT_TYPE_ENDED = 2;
+  AUCTION_EVENT_TYPE_CANCELLED = 3;
+  AUCTION_EVENT_TYPE_EXTENDED = 4;
+}
+
+// NFT event type enum
+enum NFTEventType {
+  NFT_EVENT_TYPE_UNSPECIFIED = 0;
+  NFT_EVENT_TYPE_MINTED = 1;
+  NFT_EVENT_TYPE_SOLD = 2;
+  NFT_EVENT_TYPE_TRANSFERRED = 3;
+  NFT_EVENT_TYPE_LISTED = 4;
+  NFT_EVENT_TYPE_UNLISTED = 5;
+}
+
+// Common pagination message
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 total_pages = 4;
+  bool has_next = 5;
+  bool has_prev = 6;
+}

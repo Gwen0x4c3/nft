@@ -1,0 +1,215 @@
+syntax = "proto3";
+
+package auction;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nft-platform/proto/auction";
+
+// Auction service for managing NFT auctions and bidding
+service AuctionService {
+  // Auction management methods
+  rpc CreateAuction(CreateAuctionRequest) returns (CreateAuctionResponse);
+  rpc GetAuction(GetAuctionRequest) returns (GetAuctionResponse);
+  rpc GetAuctions(GetAuctionsRequest) returns (GetAuctionsResponse);
+  rpc CancelAuction(CancelAuctionRequest) returns (CancelAuctionResponse);
+  rpc EndAuction(EndAuctionRequest) returns (EndAuctionResponse);
+  
+  // Bidding methods
+  rpc PlaceBid(PlaceBidRequest) returns (PlaceBidResponse);
+  rpc GetBids(GetBidsRequest) returns (GetBidsResponse);
+  rpc GetUserBids(GetUserBidsRequest) returns (GetBidsResponse);
+  
+  // Auction queries
+  rpc GetActiveAuctions(GetActiveAuctionsRequest) returns (GetAuctionsResponse);
+  rpc GetAuctionsBySeller(GetAuctionsBySellerRequest) returns (GetAuctionsResponse);
+  rpc GetAuctionsByNFT(GetAuctionsByNFTRequest) returns (GetAuctionsResponse);
+  
+  // System methods for background processing
+  rpc ProcessAuctionEnd(ProcessAuctionEndRequest) returns (ProcessAuctionEndResponse);
+  rpc UpdateAuctionStatus(UpdateAuctionStatusRequest) returns (UpdateAuctionStatusResponse);
+}
+
+// Messages for auction creation
+message CreateAuctionRequest {
+  uint32 nft_id = 1;
+  uint32 seller_id = 2;
+  string start_price = 3;
+  string reserve_price = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
+}
+
+message CreateAuctionResponse {
+  Auction auction = 1;
+}
+
+// Messages for auction queries
+message GetAuctionRequest {
+  uint32 auction_id = 1;
+}
+
+message GetAuctionResponse {
+  Auction auction = 1;
+}
+
+message GetAuctionsRequest {
+  repeated uint32 auction_ids = 1;
+  AuctionStatus status = 2;
+  int32 page = 3;
+  int32 limit = 4;
+  string sort = 5;
+  string order = 6;
+}
+
+message GetAuctionsResponse {
+  repeated Auction auctions = 1;
+  Pagination pagination = 2;
+}
+
+message GetActiveAuctionsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message GetAuctionsBySellerRequest {
+  uint32 seller_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message GetAuctionsByNFTRequest {
+  uint32 nft_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+// Messages for auction management
+message CancelAuctionRequest {
+  uint32 auction_id = 1;
+  uint32 seller_id = 2;
+}
+
+message CancelAuctionResponse {
+  bool success = 1;
+}
+
+message EndAuctionRequest {
+  uint32 auction_id = 1;
+}
+
+message EndAuctionResponse {
+  Auction auction = 1;
+  bool has_winner = 2;
+  uint32 winner_id = 3;
+  string winning_bid = 4;
+}
+
+// Messages for bidding
+message PlaceBidRequest {
+  uint32 auction_id = 1;
+  uint32 bidder_id = 2;
+  string amount = 3;
+}
+
+message PlaceBidResponse {
+  Bid bid = 1;
+  bool is_highest = 2;
+  string previous_high_bid = 3;
+}
+
+message GetBidsRequest {
+  uint32 auction_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message GetBidsResponse {
+  repeated Bid bids = 1;
+  Pagination pagination = 2;
+}
+
+message GetUserBidsRequest {
+  uint32 user_id = 1;
+  BidStatus status = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// Messages for system processing
+message ProcessAuctionEndRequest {
+  uint32 auction_id = 1;
+}
+
+message ProcessAuctionEndResponse {
+  bool success = 1;
+  string message = 2;
+  uint32 winner_id = 3;
+  string winning_amount = 4;
+}
+
+message UpdateAuctionStatusRequest {
+  uint32 auction_id = 1;
+  AuctionStatus status = 2;
+  uint32 winner_id = 3;
+}
+
+message UpdateAuctionStatusResponse {
+  bool success = 1;
+}
+
+// Auction entity
+message Auction {
+  uint32 id = 1;
+  uint32 nft_id = 2;
+  uint32 seller_id = 3;
+  string start_price = 4;
+  string reserve_price = 5;
+  string current_bid = 6;
+  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp end_time = 8;
+  AuctionStatus status = 9;
+  uint32 winner_id = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+  int32 bid_count = 13;
+}
+
+// Bid entity
+message Bid {
+  uint32 id = 1;
+  uint32 auction_id = 2;
+  uint32 bidder_id = 3;
+  string amount = 4;
+  string tx_hash = 5;
+  BidStatus status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// Auction status enum
+enum AuctionStatus {
+  AUCTION_STATUS_UNSPECIFIED = 0;
+  AUCTION_STATUS_PENDING = 1;
+  AUCTION_STATUS_ACTIVE = 2;
+  AUCTION_STATUS_ENDED = 3;
+  AUCTION_STATUS_CANCELLED = 4;
+}
+
+// Bid status enum
+enum BidStatus {
+  BID_STATUS_UNSPECIFIED = 0;
+  BID_STATUS_PENDING = 1;
+  BID_STATUS_CONFIRMED = 2;
+  BID_STATUS_FAILED = 3;
+}
+
+// Common pagination message
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 total_pages = 4;
+  bool has_next = 5;
+  bool has_prev = 6;
+}

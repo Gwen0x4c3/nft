@@ -1,0 +1,948 @@
+openapi: 3.0.3
+info:
+  title: NFT Platform API
+  description: API for NFT minting and auction platform with real-time bidding
+  version: 1.0.0
+  contact:
+    name: NFT Platform Team
+    email: dev@nftplatform.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.nftplatform.com/v1
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login with wallet signature
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  # User Endpoints
+  /users/profile:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Users]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      security: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # NFT Endpoints
+  /nfts:
+    get:
+      tags: [NFTs]
+      summary: List NFTs with filtering and pagination
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: creator_id
+          in: query
+          schema:
+            type: integer
+        - name: owner_id
+          in: query
+          schema:
+            type: integer
+        - name: is_for_sale
+          in: query
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, price, title]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: NFTs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFTListResponse'
+
+    post:
+      tags: [NFTs]
+      summary: Mint new NFT
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MintNFTRequest'
+      responses:
+        '201':
+          description: NFT minted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFT'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /nfts/{nftId}:
+    get:
+      tags: [NFTs]
+      summary: Get NFT by ID
+      security: []
+      parameters:
+        - name: nftId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: NFT found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFT'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [NFTs]
+      summary: Update NFT (owner only)
+      parameters:
+        - name: nftId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNFTRequest'
+      responses:
+        '200':
+          description: NFT updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NFT'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /nfts/{nftId}/transfer:
+    post:
+      tags: [NFTs]
+      summary: Transfer NFT to another user
+      parameters:
+        - name: nftId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferNFTRequest'
+      responses:
+        '200':
+          description: Transfer initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+
+  # Auction Endpoints
+  /auctions:
+    get:
+      tags: [Auctions]
+      summary: List auctions with filtering
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, active, ended, cancelled]
+        - name: seller_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auctions retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionListResponse'
+
+    post:
+      tags: [Auctions]
+      summary: Create new auction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuctionRequest'
+      responses:
+        '201':
+          description: Auction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auctions/{auctionId}:
+    get:
+      tags: [Auctions]
+      summary: Get auction by ID
+      security: []
+      parameters:
+        - name: auctionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auction found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auction'
+
+    delete:
+      tags: [Auctions]
+      summary: Cancel auction (seller only, before first bid)
+      parameters:
+        - name: auctionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auction cancelled
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Cannot cancel auction with bids
+
+  /auctions/{auctionId}/bids:
+    get:
+      tags: [Bids]
+      summary: Get auction bids
+      security: []
+      parameters:
+        - name: auctionId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Bids retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BidListResponse'
+
+    post:
+      tags: [Bids]
+      summary: Place bid on auction
+      parameters:
+        - name: auctionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceBidRequest'
+      responses:
+        '201':
+          description: Bid placed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bid'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Bid too low or auction not active
+
+  # Notification Endpoints
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Get user notifications
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: unread_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Notifications retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+
+  /notifications/{notificationId}/read:
+    put:
+      tags: [Notifications]
+      summary: Mark notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /notifications/read-all:
+    put:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  # WebSocket endpoint for real-time updates
+  /ws:
+    get:
+      tags: [WebSocket]
+      summary: WebSocket connection for real-time updates
+      description: |
+        WebSocket endpoint for receiving real-time notifications about:
+        - New bids on auctions
+        - Auction status changes
+        - NFT transfers
+        - Personal notifications
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: JWT token for authentication
+      responses:
+        '101':
+          description: WebSocket connection established
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Authentication Schemas
+    LoginRequest:
+      type: object
+      required: [wallet_address, signature, message]
+      properties:
+        wallet_address:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{40}$'
+        signature:
+          type: string
+        message:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [username, email, wallet_address, signature, message]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        email:
+          type: string
+          format: email
+        wallet_address:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{40}$'
+        signature:
+          type: string
+        message:
+          type: string
+        avatar:
+          type: string
+          format: uri
+        bio:
+          type: string
+          maxLength: 500
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        user:
+          $ref: '#/components/schemas/User'
+
+    # User Schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        wallet_address:
+          type: string
+        avatar:
+          type: string
+          format: uri
+        bio:
+          type: string
+        is_verified:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        avatar:
+          type: string
+          format: uri
+        bio:
+          type: string
+          maxLength: 500
+
+    # NFT Schemas
+    NFT:
+      type: object
+      properties:
+        id:
+          type: integer
+        token_id:
+          type: string
+        contract_address:
+          type: string
+        creator_id:
+          type: integer
+        owner_id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+          format: uri
+        metadata_uri:
+          type: string
+          format: uri
+        price:
+          type: string
+          description: Price in Wei as string
+        is_for_sale:
+          type: boolean
+        royalty:
+          type: integer
+          minimum: 0
+          maximum: 10
+        mint_tx_hash:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        creator:
+          $ref: '#/components/schemas/User'
+        owner:
+          $ref: '#/components/schemas/User'
+
+    MintNFTRequest:
+      type: object
+      required: [title, image, metadata]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+        image:
+          type: string
+          format: binary
+        metadata:
+          type: object
+          description: NFT metadata JSON
+        royalty:
+          type: integer
+          minimum: 0
+          maximum: 10
+          default: 0
+
+    UpdateNFTRequest:
+      type: object
+      properties:
+        price:
+          type: string
+          description: Price in Wei as string
+        is_for_sale:
+          type: boolean
+
+    TransferNFTRequest:
+      type: object
+      required: [to_address]
+      properties:
+        to_address:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{40}$'
+
+    NFTListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NFT'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # Auction Schemas
+    Auction:
+      type: object
+      properties:
+        id:
+          type: integer
+        nft_id:
+          type: integer
+        seller_id:
+          type: integer
+        start_price:
+          type: string
+          description: Start price in Wei
+        reserve_price:
+          type: string
+          description: Reserve price in Wei
+        current_bid:
+          type: string
+          description: Current highest bid in Wei
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, active, ended, cancelled]
+        winner_id:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        nft:
+          $ref: '#/components/schemas/NFT'
+        seller:
+          $ref: '#/components/schemas/User'
+        winner:
+          $ref: '#/components/schemas/User'
+        bids:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bid'
+
+    CreateAuctionRequest:
+      type: object
+      required: [nft_id, start_price, end_time]
+      properties:
+        nft_id:
+          type: integer
+        start_price:
+          type: string
+          description: Start price in Wei
+        reserve_price:
+          type: string
+          description: Reserve price in Wei
+        start_time:
+          type: string
+          format: date-time
+          description: If not provided, auction starts immediately
+        end_time:
+          type: string
+          format: date-time
+
+    AuctionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Auction'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # Bid Schemas
+    Bid:
+      type: object
+      properties:
+        id:
+          type: integer
+        auction_id:
+          type: integer
+        bidder_id:
+          type: integer
+        amount:
+          type: string
+          description: Bid amount in Wei
+        tx_hash:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, failed]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        bidder:
+          $ref: '#/components/schemas/User'
+
+    PlaceBidRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: string
+          description: Bid amount in Wei
+
+    BidListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bid'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # Transfer Schema
+    Transfer:
+      type: object
+      properties:
+        id:
+          type: integer
+        nft_id:
+          type: integer
+        from_id:
+          type: integer
+          nullable: true
+        to_id:
+          type: integer
+        tx_hash:
+          type: string
+        price:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [mint, sale, transfer]
+        created_at:
+          type: string
+          format: date-time
+
+    # Notification Schemas
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        type:
+          type: string
+          enum: [bid_placed, bid_outbid, auction_won, auction_ended, nft_sold]
+        title:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    NotificationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # Common Schemas
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

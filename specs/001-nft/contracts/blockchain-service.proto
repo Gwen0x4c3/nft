@@ -1,0 +1,580 @@
+syntax = "proto3";
+
+package blockchain;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nft-platform/contracts/blockchain";
+
+// Blockchain interaction service for NFT platform
+service BlockchainService {
+  // Contract operations
+  rpc DeployContract(DeployContractRequest) returns (DeployContractResponse);
+  rpc GetContract(GetContractRequest) returns (GetContractResponse);
+  rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
+  
+  // NFT operations
+  rpc MintNFT(MintNFTRequest) returns (MintNFTResponse);
+  rpc TransferNFT(TransferNFTRequest) returns (TransferNFTResponse);
+  rpc BurnNFT(BurnNFTRequest) returns (BurnNFTResponse);
+  rpc GetNFTOwner(GetNFTOwnerRequest) returns (GetNFTOwnerResponse);
+  rpc GetTokenURI(GetTokenURIRequest) returns (GetTokenURIResponse);
+  
+  // Transaction operations
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusResponse);
+  rpc EstimateGas(EstimateGasRequest) returns (EstimateGasResponse);
+  
+  // Balance and allowance operations
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+  rpc GetAllowance(GetAllowanceRequest) returns (GetAllowanceResponse);
+  rpc Approve(ApproveRequest) returns (ApproveResponse);
+  
+  // Event monitoring
+  rpc WatchEvents(WatchEventsRequest) returns (stream EventResponse);
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse);
+  
+  // Network operations
+  rpc GetNetworkInfo(GetNetworkInfoRequest) returns (GetNetworkInfoResponse);
+  rpc GetBlockNumber(GetBlockNumberRequest) returns (GetBlockNumberResponse);
+  rpc GetGasPrice(GetGasPriceRequest) returns (GetGasPriceResponse);
+  
+  // Batch operations
+  rpc BatchTransfer(BatchTransferRequest) returns (BatchTransferResponse);
+  rpc BatchMint(BatchMintRequest) returns (BatchMintResponse);
+  
+  // Marketplace operations
+  rpc CreateMarketplaceListing(CreateMarketplaceListingRequest) returns (CreateMarketplaceListingResponse);
+  rpc CancelMarketplaceListing(CancelMarketplaceListingRequest) returns (CancelMarketplaceListingResponse);
+  rpc ExecuteMarketplaceSale(ExecuteMarketplaceSaleRequest) returns (ExecuteMarketplaceSaleResponse);
+  
+  // Auction operations
+  rpc CreateAuction(CreateAuctionRequest) returns (CreateAuctionResponse);
+  rpc PlaceBid(PlaceBidRequest) returns (PlaceBidResponse);
+  rpc FinalizeAuction(FinalizeAuctionRequest) returns (FinalizeAuctionResponse);
+  
+  // Royalty operations
+  rpc SetRoyalty(SetRoyaltyRequest) returns (SetRoyaltyResponse);
+  rpc GetRoyaltyInfo(GetRoyaltyInfoRequest) returns (GetRoyaltyInfoResponse);
+  
+  // Metadata operations
+  rpc SetTokenMetadata(SetTokenMetadataRequest) returns (SetTokenMetadataResponse);
+  rpc GetTokenMetadata(GetTokenMetadataRequest) returns (GetTokenMetadataResponse);
+}
+
+// Contract deployment
+message DeployContractRequest {
+  string bytecode = 1;
+  repeated string constructor_args = 2;
+  string from_address = 3;
+  uint64 gas_limit = 4;
+  string gas_price = 5; // in wei
+  string value = 6; // in wei
+}
+
+message DeployContractResponse {
+  string transaction_hash = 1;
+  string contract_address = 2;
+  uint64 gas_used = 3;
+  TransactionStatus status = 4;
+}
+
+message GetContractRequest {
+  string contract_address = 1;
+}
+
+message GetContractResponse {
+  Contract contract = 1;
+}
+
+message ListContractsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string owner_address = 3;
+  ContractType type = 4;
+}
+
+message ListContractsResponse {
+  repeated Contract contracts = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// NFT operations
+message MintNFTRequest {
+  string contract_address = 1;
+  string to_address = 2;
+  string token_id = 3;
+  string token_uri = 4;
+  string from_address = 5;
+  uint64 gas_limit = 6;
+  string gas_price = 7;
+}
+
+message MintNFTResponse {
+  string transaction_hash = 1;
+  string token_id = 2;
+  uint64 gas_used = 3;
+  TransactionStatus status = 4;
+}
+
+message TransferNFTRequest {
+  string contract_address = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string token_id = 4;
+  uint64 gas_limit = 5;
+  string gas_price = 6;
+}
+
+message TransferNFTResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+}
+
+message BurnNFTRequest {
+  string contract_address = 1;
+  string from_address = 2;
+  string token_id = 3;
+  uint64 gas_limit = 4;
+  string gas_price = 5;
+}
+
+message BurnNFTResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+}
+
+message GetNFTOwnerRequest {
+  string contract_address = 1;
+  string token_id = 2;
+}
+
+message GetNFTOwnerResponse {
+  string owner_address = 1;
+}
+
+message GetTokenURIRequest {
+  string contract_address = 1;
+  string token_id = 2;
+}
+
+message GetTokenURIResponse {
+  string token_uri = 1;
+}
+
+// Transaction operations
+message SubmitTransactionRequest {
+  string to_address = 1;
+  string from_address = 2;
+  string value = 3; // in wei
+  string data = 4; // hex encoded
+  uint64 gas_limit = 5;
+  string gas_price = 6; // in wei
+  uint64 nonce = 7;
+}
+
+message SubmitTransactionResponse {
+  string transaction_hash = 1;
+  TransactionStatus status = 2;
+}
+
+message GetTransactionRequest {
+  string transaction_hash = 1;
+}
+
+message GetTransactionResponse {
+  Transaction transaction = 1;
+}
+
+message GetTransactionStatusRequest {
+  string transaction_hash = 1;
+}
+
+message GetTransactionStatusResponse {
+  TransactionStatus status = 1;
+  uint64 block_number = 2;
+  uint64 confirmations = 3;
+}
+
+message EstimateGasRequest {
+  string to_address = 1;
+  string from_address = 2;
+  string value = 3; // in wei
+  string data = 4; // hex encoded
+}
+
+message EstimateGasResponse {
+  uint64 gas_estimate = 1;
+  string gas_price = 2; // in wei
+}
+
+// Balance and allowance operations
+message GetBalanceRequest {
+  string address = 1;
+  string token_contract = 2; // optional, for ERC-20 tokens
+}
+
+message GetBalanceResponse {
+  string balance = 1; // in wei or token units
+  string formatted_balance = 2; // human readable
+}
+
+message GetAllowanceRequest {
+  string token_contract = 1;
+  string owner_address = 2;
+  string spender_address = 3;
+}
+
+message GetAllowanceResponse {
+  string allowance = 1; // in token units
+  string formatted_allowance = 2; // human readable
+}
+
+message ApproveRequest {
+  string token_contract = 1;
+  string owner_address = 2;
+  string spender_address = 3;
+  string amount = 4; // in token units
+  uint64 gas_limit = 5;
+  string gas_price = 6;
+}
+
+message ApproveResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+}
+
+// Event monitoring
+message WatchEventsRequest {
+  string contract_address = 1;
+  repeated string event_types = 2;
+  uint64 from_block = 3;
+  uint64 to_block = 4; // 0 for latest
+  map<string, string> filter_params = 5;
+}
+
+message EventResponse {
+  string event_type = 1;
+  string contract_address = 2;
+  uint64 block_number = 3;
+  string transaction_hash = 4;
+  uint64 log_index = 5;
+  map<string, string> data = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+message GetLogsRequest {
+  string contract_address = 1;
+  repeated string topics = 2;
+  uint64 from_block = 3;
+  uint64 to_block = 4;
+}
+
+message GetLogsResponse {
+  repeated EventLog logs = 1;
+}
+
+// Network operations
+message GetNetworkInfoRequest {}
+
+message GetNetworkInfoResponse {
+  string network_name = 1;
+  uint64 chain_id = 2;
+  string currency_symbol = 3;
+  string rpc_url = 4;
+  string explorer_url = 5;
+}
+
+message GetBlockNumberRequest {}
+
+message GetBlockNumberResponse {
+  uint64 block_number = 1;
+}
+
+message GetGasPriceRequest {}
+
+message GetGasPriceResponse {
+  string gas_price = 1; // in wei
+  string formatted_gas_price = 2; // in gwei
+}
+
+// Data models
+message Contract {
+  string address = 1;
+  string name = 2;
+  string symbol = 3;
+  ContractType type = 4;
+  string owner_address = 5;
+  uint64 total_supply = 6;
+  string bytecode = 7;
+  string abi = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message Transaction {
+  string hash = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string value = 4; // in wei
+  string data = 5; // hex encoded
+  uint64 gas_limit = 6;
+  string gas_price = 7; // in wei
+  uint64 gas_used = 8;
+  uint64 nonce = 9;
+  uint64 block_number = 10;
+  uint64 transaction_index = 11;
+  TransactionStatus status = 12;
+  google.protobuf.Timestamp timestamp = 13;
+}
+
+message EventLog {
+  string address = 1;
+  repeated string topics = 2;
+  string data = 3;
+  uint64 block_number = 4;
+  string transaction_hash = 5;
+  uint64 transaction_index = 6;
+  uint64 log_index = 7;
+  bool removed = 8;
+}
+
+// Enums
+enum ContractType {
+  CONTRACT_TYPE_UNSPECIFIED = 0;
+  CONTRACT_TYPE_ERC721 = 1;
+  CONTRACT_TYPE_ERC1155 = 2;
+  CONTRACT_TYPE_ERC20 = 3;
+  CONTRACT_TYPE_CUSTOM = 4;
+}
+
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNSPECIFIED = 0;
+  TRANSACTION_STATUS_PENDING = 1;
+  TRANSACTION_STATUS_CONFIRMED = 2;
+  TRANSACTION_STATUS_FAILED = 3;
+  TRANSACTION_STATUS_REVERTED = 4;
+}
+
+// Batch operations
+message BatchTransferRequest {
+  string contract_address = 1;
+  string from_address = 2;
+  repeated TransferItem transfers = 3;
+  uint64 gas_limit = 4;
+  string gas_price = 5;
+}
+
+message TransferItem {
+  string to_address = 1;
+  string token_id = 2;
+}
+
+message BatchTransferResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+  repeated string failed_transfers = 4;
+}
+
+message BatchMintRequest {
+  string contract_address = 1;
+  string from_address = 2;
+  repeated MintItem mints = 3;
+  uint64 gas_limit = 4;
+  string gas_price = 5;
+}
+
+message MintItem {
+  string to_address = 1;
+  string token_id = 2;
+  string token_uri = 3;
+}
+
+message BatchMintResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+  repeated string minted_tokens = 4;
+  repeated string failed_mints = 5;
+}
+
+// Marketplace operations
+message CreateMarketplaceListingRequest {
+  string marketplace_contract = 1;
+  string nft_contract = 2;
+  string token_id = 3;
+  string seller_address = 4;
+  string price = 5; // in wei
+  string payment_token = 6; // contract address, empty for ETH
+  uint64 duration = 7; // in seconds
+  uint64 gas_limit = 8;
+  string gas_price = 9;
+}
+
+message CreateMarketplaceListingResponse {
+  string transaction_hash = 1;
+  string listing_id = 2;
+  uint64 gas_used = 3;
+  TransactionStatus status = 4;
+}
+
+message CancelMarketplaceListingRequest {
+  string marketplace_contract = 1;
+  string listing_id = 2;
+  string seller_address = 3;
+  uint64 gas_limit = 4;
+  string gas_price = 5;
+}
+
+message CancelMarketplaceListingResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+}
+
+message ExecuteMarketplaceSaleRequest {
+  string marketplace_contract = 1;
+  string listing_id = 2;
+  string buyer_address = 3;
+  string payment_amount = 4; // in wei
+  uint64 gas_limit = 5;
+  string gas_price = 6;
+}
+
+message ExecuteMarketplaceSaleResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+}
+
+// Auction operations
+message CreateAuctionRequest {
+  string auction_contract = 1;
+  string nft_contract = 2;
+  string token_id = 3;
+  string seller_address = 4;
+  string starting_price = 5; // in wei
+  string reserve_price = 6; // in wei
+  uint64 duration = 7; // in seconds
+  string payment_token = 8; // contract address, empty for ETH
+  uint64 gas_limit = 9;
+  string gas_price = 10;
+}
+
+message CreateAuctionResponse {
+  string transaction_hash = 1;
+  string auction_id = 2;
+  uint64 gas_used = 3;
+  TransactionStatus status = 4;
+}
+
+message PlaceBidRequest {
+  string auction_contract = 1;
+  string auction_id = 2;
+  string bidder_address = 3;
+  string bid_amount = 4; // in wei
+  uint64 gas_limit = 5;
+  string gas_price = 6;
+}
+
+message PlaceBidResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+  bool is_winning_bid = 4;
+}
+
+message FinalizeAuctionRequest {
+  string auction_contract = 1;
+  string auction_id = 2;
+  string finalizer_address = 3;
+  uint64 gas_limit = 4;
+  string gas_price = 5;
+}
+
+message FinalizeAuctionResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+  string winner_address = 4;
+  string winning_bid = 5;
+}
+
+// Royalty operations
+message SetRoyaltyRequest {
+  string contract_address = 1;
+  string token_id = 2;
+  string recipient_address = 3;
+  uint32 royalty_percentage = 4; // basis points (e.g., 500 = 5%)
+  string from_address = 5;
+  uint64 gas_limit = 6;
+  string gas_price = 7;
+}
+
+message SetRoyaltyResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+}
+
+message GetRoyaltyInfoRequest {
+  string contract_address = 1;
+  string token_id = 2;
+  string sale_price = 3; // in wei
+}
+
+message GetRoyaltyInfoResponse {
+  string recipient_address = 1;
+  string royalty_amount = 2; // in wei
+  uint32 royalty_percentage = 3; // basis points
+}
+
+// Metadata operations
+message SetTokenMetadataRequest {
+  string contract_address = 1;
+  string token_id = 2;
+  string metadata_uri = 3;
+  string from_address = 4;
+  uint64 gas_limit = 5;
+  string gas_price = 6;
+}
+
+message SetTokenMetadataResponse {
+  string transaction_hash = 1;
+  uint64 gas_used = 2;
+  TransactionStatus status = 3;
+}
+
+message GetTokenMetadataRequest {
+  string contract_address = 1;
+  string token_id = 2;
+}
+
+message GetTokenMetadataResponse {
+  string metadata_uri = 1;
+  TokenMetadata metadata = 2;
+}
+
+message TokenMetadata {
+  string name = 1;
+  string description = 2;
+  string image = 3;
+  string animation_url = 4;
+  string external_url = 5;
+  repeated Attribute attributes = 6;
+  map<string, string> properties = 7;
+}
+
+message Attribute {
+  string trait_type = 1;
+  string value = 2;
+  string display_type = 3;
+  int32 max_value = 4;
+}

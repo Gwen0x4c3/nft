@@ -1,0 +1,181 @@
+syntax = "proto3";
+
+package nft;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nft-platform/proto/nft";
+
+// NFT service for managing NFT creation, ownership, and transfers
+service NFTService {
+  // NFT management methods
+  rpc CreateNFT(CreateNFTRequest) returns (CreateNFTResponse);
+  rpc GetNFT(GetNFTRequest) returns (GetNFTResponse);
+  rpc GetNFTs(GetNFTsRequest) returns (GetNFTsResponse);
+  rpc UpdateNFT(UpdateNFTRequest) returns (UpdateNFTResponse);
+  rpc TransferNFT(TransferNFTRequest) returns (TransferNFTResponse);
+  
+  // NFT query methods
+  rpc GetNFTsByCreator(GetNFTsByCreatorRequest) returns (GetNFTsResponse);
+  rpc GetNFTsByOwner(GetNFTsByOwnerRequest) returns (GetNFTsResponse);
+  rpc GetNFTsForSale(GetNFTsForSaleRequest) returns (GetNFTsResponse);
+  
+  // Transfer history
+  rpc GetTransferHistory(GetTransferHistoryRequest) returns (GetTransferHistoryResponse);
+  rpc RecordTransfer(RecordTransferRequest) returns (RecordTransferResponse);
+}
+
+// Messages for NFT creation
+message CreateNFTRequest {
+  uint32 creator_id = 1;
+  string title = 2;
+  string description = 3;
+  string image_url = 4;
+  string metadata_uri = 5;
+  uint32 royalty = 6;
+}
+
+message CreateNFTResponse {
+  NFT nft = 1;
+}
+
+// Messages for NFT queries
+message GetNFTRequest {
+  uint32 nft_id = 1;
+}
+
+message GetNFTResponse {
+  NFT nft = 1;
+}
+
+message GetNFTsRequest {
+  repeated uint32 nft_ids = 1;
+  int32 page = 2;
+  int32 limit = 3;
+  string sort = 4;
+  string order = 5;
+}
+
+message GetNFTsResponse {
+  repeated NFT nfts = 1;
+  Pagination pagination = 2;
+}
+
+message GetNFTsByCreatorRequest {
+  uint32 creator_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message GetNFTsByOwnerRequest {
+  uint32 owner_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message GetNFTsForSaleRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  string min_price = 3;
+  string max_price = 4;
+}
+
+// Messages for NFT updates
+message UpdateNFTRequest {
+  uint32 nft_id = 1;
+  uint32 user_id = 2;
+  string price = 3;
+  bool is_for_sale = 4;
+}
+
+message UpdateNFTResponse {
+  NFT nft = 1;
+}
+
+// Messages for NFT transfers
+message TransferNFTRequest {
+  uint32 nft_id = 1;
+  uint32 from_user_id = 2;
+  uint32 to_user_id = 3;
+  string tx_hash = 4;
+  string price = 5;
+  TransferType type = 6;
+}
+
+message TransferNFTResponse {
+  Transfer transfer = 1;
+}
+
+message RecordTransferRequest {
+  uint32 nft_id = 1;
+  uint32 from_user_id = 2;
+  uint32 to_user_id = 3;
+  string tx_hash = 4;
+  string price = 5;
+  TransferType type = 6;
+}
+
+message RecordTransferResponse {
+  Transfer transfer = 1;
+}
+
+// Messages for transfer history
+message GetTransferHistoryRequest {
+  uint32 nft_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message GetTransferHistoryResponse {
+  repeated Transfer transfers = 1;
+  Pagination pagination = 2;
+}
+
+// NFT entity
+message NFT {
+  uint32 id = 1;
+  string token_id = 2;
+  string contract_address = 3;
+  uint32 creator_id = 4;
+  uint32 owner_id = 5;
+  string title = 6;
+  string description = 7;
+  string image_url = 8;
+  string metadata_uri = 9;
+  string price = 10;
+  bool is_for_sale = 11;
+  uint32 royalty = 12;
+  string mint_tx_hash = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// Transfer entity
+message Transfer {
+  uint32 id = 1;
+  uint32 nft_id = 2;
+  uint32 from_user_id = 3;
+  uint32 to_user_id = 4;
+  string tx_hash = 5;
+  string price = 6;
+  TransferType type = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// Transfer type enum
+enum TransferType {
+  TRANSFER_TYPE_UNSPECIFIED = 0;
+  TRANSFER_TYPE_MINT = 1;
+  TRANSFER_TYPE_SALE = 2;
+  TRANSFER_TYPE_TRANSFER = 3;
+}
+
+// Common pagination message
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 total_pages = 4;
+  bool has_next = 5;
+  bool has_prev = 6;
+}
