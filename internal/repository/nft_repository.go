@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/nft-platform/internal/models"
+	"nft-platform/internal/models"
 	"gorm.io/gorm"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nft-platform/internal/models"
+	"nft-platform/internal/models"
 	"gorm.io/gorm"
 )
 

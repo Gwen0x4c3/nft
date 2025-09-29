@@ -211,7 +211,6 @@ func NewKafkaConsumer(config *KafkaConfig, topics ...string) *KafkaConsumer {
 		MinBytes:       config.MinBytes,
 		MaxBytes:       config.MaxBytes,
 		MaxWait:        config.MaxWait,
-		ReadTimeout:    config.ReadTimeout,
 		Logger:         kafka.LoggerFunc(log.Printf),
 		ErrorLogger:    kafka.LoggerFunc(log.Printf),
 	})
