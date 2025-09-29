@@ -47,7 +47,36 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+### Code Quality Excellence
+- [ ] TDD approach planned with tests written before implementation
+- [ ] Code review process defined with clear approval criteria
+- [ ] Static analysis tools integrated into development workflow
+- [ ] Documentation requirements identified for new APIs/features
+
+### User Experience First  
+- [ ] User experience impact assessed and optimized
+- [ ] Performance requirements defined (UI <100ms, API <200ms p95)
+- [ ] Error handling and user feedback mechanisms planned
+- [ ] Accessibility considerations documented
+
+### Performance & Scalability
+- [ ] Performance targets defined and measurable
+- [ ] Caching strategy planned for frequently accessed data
+- [ ] Horizontal scaling approach documented
+- [ ] Database query optimization considered
+
+### Microservices Integration
+- [ ] Service communication patterns defined (sync/async)
+- [ ] API versioning strategy documented
+- [ ] Circuit breaker and timeout handling planned
+- [ ] Message queue (Kafka) usage identified where needed
+- [ ] Caching layer (Redis) integration planned
+
+### Observability & Monitoring
+- [ ] Structured logging approach defined
+- [ ] Metrics collection strategy planned
+- [ ] Health check endpoints identified
+- [ ] Alert conditions and thresholds defined
 
 ## Project Structure
 
@@ -216,4 +245,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
