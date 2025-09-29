@@ -1,0 +1,69 @@
+version: '3.8'
+
+# Development override - use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Development services with hot reload
+  nft-server:
+    build:
+      target: development
+    volumes:
+      - .:/app:cached
+      - go_modules:/go/pkg/mod:cached
+    environment:
+      - GIN_MODE=debug
+      - LOG_LEVEL=debug
+    stdin_open: true
+    tty: true
+    profiles:
+      - dev
+
+  nft-grpc-server:
+    build:
+      target: development
+    volumes:
+      - .:/app:cached
+      - go_modules:/go/pkg/mod:cached
+    environment:
+      - LOG_LEVEL=debug
+    stdin_open: true
+    tty: true
+    profiles:
+      - dev
+
+  # Add air for hot reload
+  nft-server-hot:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: nft_server_hot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_MODE=debug
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=nft_platform
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKERS=kafka:9092
+      - BLOCKCHAIN_RPC_ENDPOINT=http://hardhat-node:8545
+      - BLOCKCHAIN_WS_ENDPOINT=ws://hardhat-node:8545
+      - BLOCKCHAIN_CHAIN_ID=31337
+    volumes:
+      - .:/app:cached
+      - go_modules:/go/pkg/mod:cached
+    networks:
+      - nft_network
+    profiles:
+      - hot-reload

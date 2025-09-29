@@ -1,0 +1,353 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: nft_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nft_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - nft_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nft_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Test Database
+  postgres_test:
+    image: postgres:15-alpine
+    container_name: nft_postgres_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nft_platform_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - nft_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nft_platform_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: nft_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - nft_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Zookeeper (required for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: nft_zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - nft_network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Kafka Message Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: nft_kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - nft_network
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kafka UI (for development)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: nft_kafka_ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - nft_network
+
+  # Local Ethereum Node (Hardhat Network)
+  hardhat-node:
+    image: node:18-alpine
+    container_name: nft_hardhat_node
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./blockchain:/app
+      - hardhat_data:/app/node_modules
+    command: >
+      sh -c "
+        if [ ! -f package.json ]; then
+          npm init -y &&
+          npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox &&
+          npx hardhat init --yes;
+        fi &&
+        npx hardhat node --hostname 0.0.0.0
+      "
+    networks:
+      - nft_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8545"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # NFT Platform HTTP Server
+  nft-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: nft_http_server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_MODE=debug
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=nft_platform
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKERS=kafka:9092
+      - BLOCKCHAIN_RPC_ENDPOINT=http://hardhat-node:8545
+      - BLOCKCHAIN_WS_ENDPOINT=ws://hardhat-node:8545
+      - BLOCKCHAIN_CHAIN_ID=31337
+    volumes:
+      - .:/app
+      - go_modules:/go/pkg/mod
+    networks:
+      - nft_network
+    profiles:
+      - app
+
+  # NFT Platform gRPC Server
+  nft-grpc-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: nft_grpc_server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=nft_platform
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKERS=kafka:9092
+      - BLOCKCHAIN_RPC_ENDPOINT=http://hardhat-node:8545
+      - BLOCKCHAIN_WS_ENDPOINT=ws://hardhat-node:8545
+      - BLOCKCHAIN_CHAIN_ID=31337
+    volumes:
+      - .:/app
+      - go_modules:/go/pkg/mod
+    command: ["go", "run", "./cmd/grpc-server"]
+    networks:
+      - nft_network
+    profiles:
+      - app
+
+  # Database Migration Service
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: nft_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=nft_platform
+    volumes:
+      - .:/app
+      - go_modules:/go/pkg/mod
+    command: ["make", "migrate-up"]
+    networks:
+      - nft_network
+    profiles:
+      - migration
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nft_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - nft_network
+    profiles:
+      - monitoring
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nft_grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - nft_network
+    profiles:
+      - monitoring
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: nft_nginx
+    restart: unless-stopped
+    depends_on:
+      - nft-server
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf
+      - ./configs/ssl:/etc/nginx/ssl
+    networks:
+      - nft_network
+    profiles:
+      - proxy
+
+volumes:
+  postgres_data:
+    name: nft_postgres_data
+  postgres_test_data:
+    name: nft_postgres_test_data
+  redis_data:
+    name: nft_redis_data
+  kafka_data:
+    name: nft_kafka_data
+  zookeeper_data:
+    name: nft_zookeeper_data
+  zookeeper_logs:
+    name: nft_zookeeper_logs
+  hardhat_data:
+    name: nft_hardhat_data
+  go_modules:
+    name: nft_go_modules
+  prometheus_data:
+    name: nft_prometheus_data
+  grafana_data:
+    name: nft_grafana_data
+
+networks:
+  nft_network:
+    name: nft_network
+    driver: bridge

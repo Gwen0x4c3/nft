@@ -1,0 +1,104 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build artifacts
+bin/
+dist/
+build/
+*.test
+
+# Go coverage files
+*.out
+coverage.out
+coverage.html
+
+# Go workspace file
+go.work
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Dependencies
+node_modules/
+vendor/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Private keys and secrets (IMPORTANT)
+*.key
+*.pem
+*.p12
+*.pfx
+private_keys/
+secrets/
+
+# Blockchain data
+blockchain_data/
+geth/
+chaindata/
+
+# Build output
+*.out
+main
+
+# Testing
+.coverage/
+test_results/
+
+# Documentation
+docs/_site/
+docs/.jekyll-cache/
+
+# Generated files
+*.pb.go
+internal/proto/
+docs/api/
+
+# Cache
+.cache/
+*.cache
+
+# Uploads
+uploads/
+static/uploads/
+
+# Docker
+.docker/
+
+# Local development
+docker-compose.override.yml
