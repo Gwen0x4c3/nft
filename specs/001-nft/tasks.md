@@ -135,10 +135,10 @@
 
 ### Middleware
 
-- [ ] T060 [P] JWT authentication middleware in internal/middleware/auth.go
-- [ ] T061 [P] Rate limiting middleware in internal/middleware/rate_limit.go
-- [ ] T062 [P] CORS middleware configuration in internal/middleware/cors.go
-- [ ] T063 [P] Request logging middleware in internal/middleware/logging.go
+- [x] T060 [P] JWT authentication middleware in internal/middleware/auth.go
+- [x] T061 [P] Rate limiting middleware in internal/middleware/rate_limit.go
+- [x] T062 [P] CORS middleware configuration in internal/middleware/cors.go
+- [x] T063 [P] Request logging middleware in internal/middleware/logging.go
 
 ### API Handlers - Authentication
 
