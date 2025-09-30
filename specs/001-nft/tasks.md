@@ -142,23 +142,23 @@
 
 ### API Handlers - Authentication
 
-- [ ] T064 POST /auth/login handler in internal/handlers/auth_handler.go
-- [ ] T065 POST /auth/register handler in internal/handlers/auth_handler.go
-- [ ] T066 POST /auth/refresh handler in internal/handlers/auth_handler.go
+- [x] T064 POST /auth/login handler in internal/handlers/auth_handler.go
+- [x] T065 POST /auth/register handler in internal/handlers/auth_handler.go
+- [x] T066 POST /auth/refresh handler in internal/handlers/auth_handler.go
 
 ### API Handlers - Users
 
-- [ ] T067 GET /users/profile handler in internal/handlers/user_handler.go
-- [ ] T068 PUT /users/profile handler in internal/handlers/user_handler.go
-- [ ] T069 GET /users/{userId} handler in internal/handlers/user_handler.go
+- [x] T067 GET /users/profile handler in internal/handlers/user_handler.go
+- [x] T068 PUT /users/profile handler in internal/handlers/user_handler.go
+- [x] T069 GET /users/{userId} handler in internal/handlers/user_handler.go
 
 ### API Handlers - NFTs
 
-- [ ] T070 GET /nfts handler with filtering in internal/handlers/nft_handler.go
-- [ ] T071 POST /nfts handler with file upload in internal/handlers/nft_handler.go
-- [ ] T072 GET /nfts/{nftId} handler in internal/handlers/nft_handler.go
-- [ ] T073 PUT /nfts/{nftId} handler in internal/handlers/nft_handler.go
-- [ ] T074 POST /nfts/{nftId}/transfer handler in internal/handlers/nft_handler.go
+- [x] T070 GET /nfts handler with filtering in internal/handlers/nft_handler.go
+- [x] T071 POST /nfts handler with file upload in internal/handlers/nft_handler.go
+- [x] T072 GET /nfts/{nftId} handler in internal/handlers/nft_handler.go
+- [x] T073 PUT /nfts/{nftId} handler in internal/handlers/nft_handler.go
+- [x] T074 POST /nfts/{nftId}/transfer handler in internal/handlers/nft_handler.go
 
 ### API Handlers - Auctions & Bids
 
