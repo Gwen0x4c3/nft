@@ -12,7 +12,6 @@ import (
 	"nft-platform/pkg/validation"
 )
 
-
 // AuthResponse represents the authentication response
 type AuthResponse struct {
 	AccessToken  string       `json:"access_token"`
@@ -28,7 +27,7 @@ type LoginRequest struct {
 	Message       string `json:"message" validate:"required"`
 }
 
-// RegisterRequest represents the registration request payload  
+// RegisterRequest represents the registration request payload
 type RegisterRequest struct {
 	Username      string `json:"username" validate:"required,min=3,max=30,alphanum"`
 	Email         string `json:"email" validate:"required,email"`
@@ -53,22 +52,22 @@ type RefreshTokenRequest struct {
 
 // UserService handles user authentication and management operations
 type UserService struct {
-	userRepo        repository.UserRepository
-	validator       *validation.CustomValidator
-	jwtManager      *auth.JWTManager
-	signVerifier    *crypto.SignatureVerifier
-	messageGen      *crypto.MessageGenerator
+	userRepo     *repository.UserRepository
+	validator    *validation.CustomValidator
+	jwtManager   *auth.JWTManager
+	signVerifier *crypto.SignatureVerifier
+	messageGen   *crypto.MessageGenerator
 }
 
 // ServiceConfig represents configuration for the user service
 type ServiceConfig struct {
-	JWTManager      *auth.JWTManager
-	SignVerifier    *crypto.SignatureVerifier
-	MessageGen      *crypto.MessageGenerator
+	JWTManager   *auth.JWTManager
+	SignVerifier *crypto.SignatureVerifier
+	MessageGen   *crypto.MessageGenerator
 }
 
 // NewUserService creates a new UserService instance
-func NewUserService(userRepo repository.UserRepository, config *ServiceConfig) *UserService {
+func NewUserService(userRepo *repository.UserRepository, config *ServiceConfig) *UserService {
 	// Use provided dependencies or create default ones
 	jwtManager := config.JWTManager
 	if jwtManager == nil {
@@ -78,17 +77,17 @@ func NewUserService(userRepo repository.UserRepository, config *ServiceConfig) *
 			panic(fmt.Sprintf("Failed to create JWT manager: %v", err))
 		}
 	}
-	
+
 	signVerifier := config.SignVerifier
 	if signVerifier == nil {
 		signVerifier = crypto.NewSignatureVerifier()
 	}
-	
+
 	messageGen := config.MessageGen
 	if messageGen == nil {
 		messageGen = crypto.NewMessageGenerator()
 	}
-	
+
 	return &UserService{
 		userRepo:     userRepo,
 		validator:    validation.NewCustomValidator(),
@@ -290,7 +289,7 @@ func (s *UserService) generateAuthResponse(user *models.User) (*AuthResponse, er
 
 // Helper methods for backwards compatibility and convenience
 
-// ExportJWTPrivateKeyPEM exports JWT private key as PEM string  
+// ExportJWTPrivateKeyPEM exports JWT private key as PEM string
 func (s *UserService) ExportJWTPrivateKeyPEM() string {
 	return s.jwtManager.ExportPrivateKeyPEM()
 }

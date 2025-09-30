@@ -13,24 +13,34 @@ import (
 
 	"nft-platform/internal/models"
 	"nft-platform/internal/repository"
+	"nft-platform/internal/types"
 	"nft-platform/pkg/validation"
 )
 
 // NFTService handles NFT-related business operations
 type NFTService struct {
-	nftRepo       repository.NFTRepository
-	userRepo      repository.UserRepository
+	nftRepo       *repository.NFTRepository
+	userRepo      *repository.UserRepository
 	transferRepo  *repository.TransferRepository
 	validator     *validation.CustomValidator
 	blockchainSvc BlockchainService
 	ipfsService   IPFSService
 }
 
+// NFTServiceConfig represents configuration for the NFT service
+type NFTServiceConfig struct {
+	BlockchainService BlockchainService
+	IPFSService       IPFSService
+	DefaultGatewayURL string
+	MaxFileSize       int64 // Max file size in bytes
+	AllowedFileTypes  []string
+	AutoPinToIPFS     bool
+}
 
 // NewNFTService creates a new NFT service instance
 func NewNFTService(
-	nftRepo repository.NFTRepository,
-	userRepo repository.UserRepository,
+	nftRepo *repository.NFTRepository,
+	userRepo *repository.UserRepository,
 	transferRepo *repository.TransferRepository,
 	config *NFTServiceConfig,
 ) *NFTService {
@@ -45,7 +55,7 @@ func NewNFTService(
 }
 
 // MintNFT creates a new NFT and mints it on the blockchain
-func (s *NFTService) MintNFT(ctx context.Context, creatorID uint, req *MintNFTRequest) (*models.NFT, error) {
+func (s *NFTService) MintNFT(ctx context.Context, creatorID uint, req *types.MintNFTRequest) (*models.NFT, error) {
 	// Validate request
 	if err := s.validator.Struct(req); err != nil {
 		return nil, fmt.Errorf("validation failed: %w", err)
@@ -76,7 +86,7 @@ func (s *NFTService) MintNFT(ctx context.Context, creatorID uint, req *MintNFTRe
 	}
 
 	// Create metadata
-	metadata := NFTMetadata{
+	metadata := types.NFTMetadata{
 		Name:        req.Title,
 		Description: req.Description,
 		Image:       imageURL,
@@ -87,7 +97,7 @@ func (s *NFTService) MintNFT(ctx context.Context, creatorID uint, req *MintNFTRe
 		if attrs, ok := req.Metadata["attributes"].([]interface{}); ok {
 			for _, attr := range attrs {
 				if attrMap, ok := attr.(map[string]interface{}); ok {
-					metadata.Attributes = append(metadata.Attributes, MetadataAttribute{
+					metadata.Attributes = append(metadata.Attributes, types.MetadataAttribute{
 						TraitType: fmt.Sprintf("%v", attrMap["trait_type"]),
 						Value:     attrMap["value"],
 					})
@@ -201,7 +211,7 @@ func (s *NFTService) GetNFTByTokenID(ctx context.Context, tokenID string) (*mode
 }
 
 // ListNFTs retrieves NFTs with filtering and pagination
-func (s *NFTService) ListNFTs(ctx context.Context, filter *repository.NFTFilter, page, limit int) (*NFTListResponse, error) {
+func (s *NFTService) ListNFTs(ctx context.Context, filter *repository.NFTFilter, page, limit int) (*types.NFTListResponse, error) {
 	// Validate pagination
 	if page < 1 {
 		page = 1
@@ -226,9 +236,9 @@ func (s *NFTService) ListNFTs(ctx context.Context, filter *repository.NFTFilter,
 
 	totalPages := int((total + int64(limit) - 1) / int64(limit))
 
-	return &NFTListResponse{
+	return &types.NFTListResponse{
 		Data: nfts,
-		Pagination: PaginationInfo{
+		Pagination: types.PaginationInfo{
 			Page:       page,
 			Limit:      limit,
 			Total:      total,
@@ -238,7 +248,7 @@ func (s *NFTService) ListNFTs(ctx context.Context, filter *repository.NFTFilter,
 }
 
 // GetNFTsByCreator retrieves NFTs created by a specific user
-func (s *NFTService) GetNFTsByCreator(ctx context.Context, creatorID uint, page, limit int) (*NFTListResponse, error) {
+func (s *NFTService) GetNFTsByCreator(ctx context.Context, creatorID uint, page, limit int) (*types.NFTListResponse, error) {
 	filter := &repository.NFTFilter{
 		CreatorID: &creatorID,
 	}
@@ -246,7 +256,7 @@ func (s *NFTService) GetNFTsByCreator(ctx context.Context, creatorID uint, page,
 }
 
 // GetNFTsByOwner retrieves NFTs owned by a specific user
-func (s *NFTService) GetNFTsByOwner(ctx context.Context, ownerID uint, page, limit int) (*NFTListResponse, error) {
+func (s *NFTService) GetNFTsByOwner(ctx context.Context, ownerID uint, page, limit int) (*types.NFTListResponse, error) {
 	filter := &repository.NFTFilter{
 		OwnerID: &ownerID,
 	}
@@ -254,7 +264,7 @@ func (s *NFTService) GetNFTsByOwner(ctx context.Context, ownerID uint, page, lim
 }
 
 // UpdateNFT updates NFT details (only by owner)
-func (s *NFTService) UpdateNFT(ctx context.Context, nftID uint, userID uint, req *UpdateNFTRequest) (*models.NFT, error) {
+func (s *NFTService) UpdateNFT(ctx context.Context, nftID uint, userID uint, req *types.UpdateNFTRequest) (*models.NFT, error) {
 	// Validate request
 	if err := s.validator.Struct(req); err != nil {
 		return nil, fmt.Errorf("validation failed: %w", err)
@@ -307,7 +317,7 @@ func (s *NFTService) UpdateNFT(ctx context.Context, nftID uint, userID uint, req
 }
 
 // TransferNFT transfers NFT ownership
-func (s *NFTService) TransferNFT(ctx context.Context, nftID uint, fromUserID uint, req *TransferNFTRequest) (*models.Transfer, error) {
+func (s *NFTService) TransferNFT(ctx context.Context, nftID uint, fromUserID uint, req *types.TransferNFTRequest) (*models.Transfer, error) {
 	// Validate request
 	if err := s.validator.Struct(req); err != nil {
 		return nil, fmt.Errorf("validation failed: %w", err)
@@ -515,4 +525,3 @@ func (s *NFTService) ParsePriceWei(priceStr string) (*big.Int, error) {
 
 	return price, nil
 }
-

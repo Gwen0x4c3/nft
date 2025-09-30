@@ -7,20 +7,21 @@ import (
 	"time"
 
 	"nft-platform/internal/models"
+
 	"gorm.io/gorm"
 )
 
 // AuctionFilter represents filtering options for auction queries
 type AuctionFilter struct {
-	Status         *string
-	SellerID       *uint
-	NFTID          *uint
-	MinStartPrice  *big.Int
-	MaxStartPrice  *big.Int
-	IsActive       *bool
-	HasBids        *bool
-	EndingAfter    *time.Time
-	EndingBefore   *time.Time
+	Status          *string
+	SellerID        *uint
+	NFTID           *uint
+	MinStartPrice   *big.Int
+	MaxStartPrice   *big.Int
+	IsActive        *bool
+	HasBids         *bool
+	EndingAfter     *time.Time
+	EndingBefore    *time.Time
 	HasReservePrice *bool
 }
 
@@ -485,10 +486,15 @@ func (r *AuctionRepository) GetRecentAuctions(limit int) ([]models.Auction, erro
 	return auctions, nil
 }
 
+// GetDB returns the database instance (for creating other repositories in services)
+func (r *AuctionRepository) GetDB() *gorm.DB {
+	return r.db
+}
+
 // AuctionStats represents auction statistics
 type AuctionStats struct {
-	TotalAuctions     int64 `json:"total_auctions"`
-	ActiveAuctions    int64 `json:"active_auctions"`
-	EndedAuctions     int64 `json:"ended_auctions"`
-	AuctionsWithBids  int64 `json:"auctions_with_bids"`
+	TotalAuctions    int64 `json:"total_auctions"`
+	ActiveAuctions   int64 `json:"active_auctions"`
+	EndedAuctions    int64 `json:"ended_auctions"`
+	AuctionsWithBids int64 `json:"auctions_with_bids"`
 }

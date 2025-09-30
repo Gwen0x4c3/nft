@@ -12,6 +12,9 @@ type BlockchainService interface {
 	GetTokenOwner(ctx context.Context, tokenID string) (string, error)
 	GetNextTokenID(ctx context.Context) (string, error)
 	
+	// Auction operations
+	PlaceBid(ctx context.Context, tokenID string, bidder string, amount interface{}) (*BlockchainTransaction, error)
+	
 	// Contract operations
 	SetContractAddress(contractType string, address string) error
 	GetContractAddress(contractType string) string
@@ -178,6 +181,20 @@ func (m *MockBlockchainService) GetTokenOwner(ctx context.Context, tokenID strin
 
 func (m *MockBlockchainService) GetNextTokenID(ctx context.Context) (string, error) {
 	return generateMockTokenID(), nil
+}
+
+func (m *MockBlockchainService) PlaceBid(ctx context.Context, tokenID string, bidder string, amount interface{}) (*BlockchainTransaction, error) {
+	return &BlockchainTransaction{
+		Hash:         generateMockTxHash(),
+		Status:       true,
+		BlockNumber:  m.blockNumber + 1,
+		BlockHash:    generateMockBlockHash(),
+		From:         bidder,
+		To:           "0x1234567890123456789012345678901234567890", // Auction contract address
+		GasUsed:      150000,
+		GasPrice:     "20000000000", // 20 Gwei
+		Confirmations: 1,
+	}, nil
 }
 
 func (m *MockBlockchainService) SetContractAddress(contractType string, address string) error {

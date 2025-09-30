@@ -130,8 +130,8 @@
 
 - [x] T056 User service with authentication logic in internal/service/user_service.go
 - [x] T057 NFT service with minting and transfer logic in internal/service/nft_service.go
-- [ ] T058 Auction service with bidding logic in internal/service/auction_service.go
-- [ ] T059 Notification service with real-time delivery in internal/service/notification_service.go
+- [x] T058 Auction service with bidding logic in internal/service/auction_service.go
+- [x] T059 Notification service with real-time delivery in internal/service/notification_service.go
 
 ### Middleware
 
