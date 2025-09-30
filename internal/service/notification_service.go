@@ -115,3 +115,82 @@ func (s *NotificationService) SendNotification(ctx context.Context, userID uint,
 func (s *NotificationService) CreateNotification(ctx context.Context, req *types.CreateNotificationRequest) (*models.Notification, error) {
 	return s.SendNotification(ctx, req.UserID, req.Type, req.Title, req.Message, req.Data)
 }
+
+// NotificationListResponse represents notification list with pagination
+type NotificationListResponse struct {
+	Data       []models.Notification `json:"data"`
+	Pagination types.PaginationInfo  `json:"pagination"`
+}
+
+// GetUserNotifications retrieves notifications for a user with pagination
+func (s *NotificationService) GetUserNotifications(ctx context.Context, userID uint, filter *repository.NotificationFilter, page, limit int) (*NotificationListResponse, error) {
+	// Validate pagination
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 50
+	}
+
+	offset := (page - 1) * limit
+
+	// Get notifications from repository
+	notifications, err := s.notificationRepo.List(filter, offset, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get notifications: %w", err)
+	}
+
+	// Get total count
+	total, err := s.notificationRepo.Count(filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count notifications: %w", err)
+	}
+
+	// Calculate pagination info
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	return &NotificationListResponse{
+		Data: notifications,
+		Pagination: types.PaginationInfo{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	}, nil
+}
+
+// MarkAsRead marks a notification as read
+func (s *NotificationService) MarkAsRead(ctx context.Context, notificationID uint, userID uint) error {
+	// Get notification
+	notification, err := s.notificationRepo.GetByID(notificationID)
+	if err != nil {
+		return fmt.Errorf("notification not found: %w", err)
+	}
+
+	// Verify ownership
+	if notification.UserID != userID {
+		return fmt.Errorf("user is not the owner of this notification")
+	}
+
+	// Mark as read
+	notification.IsRead = true
+
+	// Update in database
+	if err := s.notificationRepo.Update(notification); err != nil {
+		return fmt.Errorf("failed to update notification: %w", err)
+	}
+
+	return nil
+}
+
+// MarkAllAsRead marks all notifications as read for a user
+func (s *NotificationService) MarkAllAsRead(ctx context.Context, userID uint) (int, error) {
+	// Update all unread notifications
+	count, err := s.notificationRepo.MarkAllAsReadForUser(userID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to mark all notifications as read: %w", err)
+	}
+
+	return int(count), nil
+}

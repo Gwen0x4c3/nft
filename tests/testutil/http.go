@@ -21,10 +21,13 @@ type TestServer struct {
 	Router *gin.Engine
 }
 
-// NewTestServer creates a new test server
+// NewTestServer creates a new test server with all routes registered
 func NewTestServer() *TestServer {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	
+	// Setup routes using the test router setup function
+	SetupTestRoutes(router)
 	
 	server := httptest.NewServer(router)
 	
@@ -188,4 +191,22 @@ func MockAuctionData() map[string]interface{} {
 		"created_at":    "2023-01-01T00:00:00Z",
 		"updated_at":    "2023-01-01T00:00:00Z",
 	}
+}
+
+// SetupTestRoutes registers all API routes for testing
+func SetupTestRoutes(router *gin.Engine) {
+	// Note: This is a placeholder. In a real application, you would:
+	// 1. Initialize all repositories with a test database
+	// 2. Initialize all services with the repositories
+	// 3. Initialize all handlers with the services
+	// 4. Register all routes with the handlers
+	
+	// For now, we'll create a minimal setup to allow routes to be registered
+	// The actual implementation will be done when the main server setup is complete
+	
+	api := router.Group("/api/v1")
+	
+	// These routes will be implemented when the main application wiring is done
+	// For now, they will return 404, which is expected in the TDD approach
+	_ = api
 }

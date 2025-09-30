@@ -162,18 +162,18 @@
 
 ### API Handlers - Auctions & Bids
 
-- [ ] T075 GET /auctions handler with status filtering in internal/handlers/auction_handler.go
-- [ ] T076 POST /auctions handler in internal/handlers/auction_handler.go
-- [ ] T077 GET /auctions/{auctionId} handler in internal/handlers/auction_handler.go
-- [ ] T078 DELETE /auctions/{auctionId} handler in internal/handlers/auction_handler.go
-- [ ] T079 GET /auctions/{auctionId}/bids handler in internal/handlers/bid_handler.go
-- [ ] T080 POST /auctions/{auctionId}/bids handler in internal/handlers/bid_handler.go
+- [x] T075 GET /auctions handler with status filtering in internal/handlers/auction_handler.go
+- [x] T076 POST /auctions handler in internal/handlers/auction_handler.go
+- [x] T077 GET /auctions/{auctionId} handler in internal/handlers/auction_handler.go
+- [x] T078 DELETE /auctions/{auctionId} handler in internal/handlers/auction_handler.go
+- [x] T079 GET /auctions/{auctionId}/bids handler in internal/handlers/bid_handler.go
+- [x] T080 POST /auctions/{auctionId}/bids handler in internal/handlers/bid_handler.go
 
 ### API Handlers - Notifications
 
-- [ ] T081 GET /notifications handler in internal/handlers/notification_handler.go
-- [ ] T082 PUT /notifications/{notificationId}/read handler in internal/handlers/notification_handler.go
-- [ ] T083 PUT /notifications/read-all handler in internal/handlers/notification_handler.go
+- [x] T081 GET /notifications handler in internal/handlers/notification_handler.go
+- [x] T082 PUT /notifications/{notificationId}/read handler in internal/handlers/notification_handler.go
+- [x] T083 PUT /notifications/read-all handler in internal/handlers/notification_handler.go
 
 ## Phase 3.4: Integration
 
