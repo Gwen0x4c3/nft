@@ -179,7 +179,7 @@
 
 - [x] T084 WebSocket connection manager in internal/websocket/manager.go
 - [x] T085 WebSocket event broadcasting in internal/websocket/events.go
-- [ ] T086 Blockchain client with smart contract interaction in internal/blockchain/client.go
+- [x] T086 Blockchain client with smart contract interaction in internal/blockchain/client.go
 - [ ] T087 Kafka message producer for events in internal/messaging/producer.go
 - [ ] T088 Kafka message consumer for blockchain events in internal/messaging/consumer.go
 - [ ] T089 Main application server setup in cmd/server/main.go
