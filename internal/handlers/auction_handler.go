@@ -7,7 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"nft-platform/internal/errors"
 	"nft-platform/internal/repository"
+	"nft-platform/internal/response"
 	"nft-platform/internal/service"
 )
 
@@ -68,17 +70,12 @@ func (h *AuctionHandler) ListAuctions(c *gin.Context) {
 	// Get auctions from service
 	auctionsResp, err := h.auctionService.ListAuctions(context.Background(), &filter, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "fetch_failed",
-			Message: "Failed to retrieve auctions",
-			Code:    "FETCH_FAILED",
-			Details: map[string]interface{}{"error": err.Error()},
-		})
+		response.Error(c, errors.NewDatabaseError(err))
 		return
 	}
 
 	// Return response with pagination
-	c.JSON(http.StatusOK, auctionsResp)
+	response.OK(c, auctionsResp)
 }
 
 // CreateAuction godoc

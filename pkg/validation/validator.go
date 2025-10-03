@@ -19,6 +19,7 @@ func NewCustomValidator() *CustomValidator {
 	
 	// Register custom validation rules
 	validate.RegisterValidation("eth_addr", validateEthereumAddress)
+	validate.RegisterValidation("eth_tx_hash", validateEthereumTransactionHash)
 	validate.RegisterValidation("alphanum", validateAlphanumeric)
 	validate.RegisterValidation("username", validateUsername)
 	validate.RegisterValidation("wallet_signature", validateWalletSignature)
@@ -49,6 +50,21 @@ func (cv *CustomValidator) Var(field interface{}, tag string) error {
 func validateEthereumAddress(fl validator.FieldLevel) bool {
 	address := fl.Field().String()
 	return common.IsHexAddress(address)
+}
+
+// validateEthereumTransactionHash validates Ethereum transaction hash format
+func validateEthereumTransactionHash(fl validator.FieldLevel) bool {
+	txHash := fl.Field().String()
+	if txHash == "" {
+		return true // Let required validator handle empty strings
+	}
+
+	// Remove 0x prefix if present
+	cleanHash := strings.TrimPrefix(txHash, "0x")
+
+	// Ethereum transaction hashes are 32 bytes = 64 hex characters
+	matched, _ := regexp.MatchString(`^[a-fA-F0-9]{64}$`, cleanHash)
+	return matched
 }
 
 // validateAlphanumeric validates alphanumeric characters with underscores

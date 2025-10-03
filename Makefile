@@ -1,4 +1,4 @@
-.PHONY: help build test lint fmt proto-gen clean run-server run-grpc-server
+.PHONY: help build test test-integration test-comprehensive test-all lint fmt proto-gen clean run-server run-grpc-server optimize-imports
 
 # Colors
 CYAN := \033[36m
@@ -18,6 +18,18 @@ build: ## Build the application
 test: ## Run all tests
 	@echo "$(CYAN)Running tests...$(RESET)"
 	@go test -v ./...
+
+test-integration: ## Run comprehensive integration tests
+	@echo "$(CYAN)Running integration tests...$(RESET)"
+	@go test -v ./tests/integration/... -timeout=30m
+
+test-comprehensive: ## Run comprehensive integration test scenarios
+	@echo "$(CYAN)Running comprehensive integration tests...$(RESET)"
+	@go test -v ./tests/integration/comprehensive_scenarios_test.go -timeout=30m
+
+test-all: ## Run all tests with comprehensive reporting
+	@echo "$(CYAN)Running all tests with comprehensive reporting...$(RESET)"
+	@./scripts/run-all-tests.sh
 
 test-coverage: ## Run tests with coverage
 	@echo "$(CYAN)Running tests with coverage...$(RESET)"
@@ -45,6 +57,10 @@ fmt: ## Format code with gofmt and goimports
 	@echo "$(CYAN)Formatting code...$(RESET)"
 	@gofmt -s -w .
 	@goimports -w .
+
+optimize-imports: ## Optimize imports across the codebase
+	@echo "$(CYAN)Optimizing imports...$(RESET)"
+	@./scripts/optimize-imports.sh
 
 # Proto generation commands
 proto-gen: ## Generate Go code from proto files
