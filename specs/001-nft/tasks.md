@@ -182,7 +182,7 @@
 - [x] T086 Blockchain client with smart contract interaction in internal/blockchain/client.go
 - [x] T087 Kafka message producer for events in internal/messaging/producer.go
 - [x] T088 Kafka message consumer for blockchain events in internal/messaging/consumer.go
-- [ ] T089 Main application server setup in cmd/server/main.go
+- [x] T089 Main application server setup in cmd/server/main.go
 
 ## Phase 3.5: Polish
 
